@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, createElement} from 'react';
 import PropTypes from 'prop-types';
 import {ScrollView, View, StyleSheet, Platform, RefreshControl, ViewPropTypes} from 'react-native';
 import {shallowEqual, swapArrayElements} from './utils';
@@ -27,15 +27,8 @@ export default class SortableList extends Component {
     showsHorizontalScrollIndicator: PropTypes.bool,
     refreshControl: PropTypes.element,
     autoscrollAreaSize: PropTypes.number,
-    snapToAlignment: PropTypes.string,
     rowActivationTime: PropTypes.number,
     manuallyActivateRows: PropTypes.bool,
-    keyboardShouldPersistTaps: PropTypes.oneOf(['never', 'always', 'handled']),
-    scrollEventThrottle: PropTypes.number,
-    decelerationRate: PropTypes.oneOf([PropTypes.string, PropTypes.number]),
-    pagingEnabled: PropTypes.bool,
-    nestedScrollEnabled: PropTypes.bool,
-    disableIntervalMomentum: PropTypes.bool,
 
     renderRow: PropTypes.func.isRequired,
     renderHeader: PropTypes.func,
@@ -44,22 +37,15 @@ export default class SortableList extends Component {
     onChangeOrder: PropTypes.func,
     onActivateRow: PropTypes.func,
     onReleaseRow: PropTypes.func,
-    onScroll: PropTypes.func,
   };
 
   static defaultProps = {
     sortingEnabled: true,
     scrollEnabled: true,
-    keyboardShouldPersistTaps: 'never',
     autoscrollAreaSize: 60,
-    snapToAlignment: 'start',
     manuallyActivateRows: false,
     showsVerticalScrollIndicator: true,
-    showsHorizontalScrollIndicator: true,
-    scrollEventThrottle: 2,
-    decelerationRate: 'normal',
-    pagingEnabled: false,
-    onScroll: () => {}
+    showsHorizontalScrollIndicator: true
   }
 
   /**
@@ -146,14 +132,11 @@ export default class SortableList extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const {data, scrollEnabled} = this.state;
+    const {data} = this.state;
     const {data: prevData} = prevState;
 
     if (data && prevData && !shallowEqual(data, prevData)) {
       this._onUpdateLayouts();
-    }
-    if (prevProps.scrollEnabled !== scrollEnabled) {
-      this.setState({scrollEnabled: prevProps.scrollEnabled})
     }
   }
 
@@ -209,21 +192,7 @@ export default class SortableList extends Component {
   }
 
   render() {
-    let {
-      contentContainerStyle, 
-      innerContainerStyle, 
-      horizontal, 
-      style, 
-      showsVerticalScrollIndicator, 
-      showsHorizontalScrollIndicator, 
-      snapToAlignment,
-      scrollEventThrottle,
-      decelerationRate,
-      pagingEnabled,
-      nestedScrollEnabled,
-      disableIntervalMomentum,
-      keyboardShouldPersistTaps,
-    } = this.props;
+    let {contentContainerStyle, innerContainerStyle, horizontal, style, showsVerticalScrollIndicator, showsHorizontalScrollIndicator} = this.props;
     const {animated, contentHeight, contentWidth, scrollEnabled} = this.state;
     const containerStyle = StyleSheet.flatten([style, {opacity: Number(animated)}])
     innerContainerStyle = [
@@ -242,22 +211,15 @@ export default class SortableList extends Component {
     return (
       <View style={containerStyle} ref={this._onRefContainer}>
         <ScrollView
-          nestedScrollEnabled={nestedScrollEnabled}
-          disableIntervalMomentum={disableIntervalMomentum}
           refreshControl={refreshControl}
           ref={this._onRefScrollView}
           horizontal={horizontal}
           contentContainerStyle={contentContainerStyle}
-          scrollEventThrottle={scrollEventThrottle}
-          pagingEnabled={pagingEnabled}
-          decelerationRate={decelerationRate}
+          scrollEventThrottle={2}
           scrollEnabled={scrollEnabled}
-          keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           showsHorizontalScrollIndicator={showsHorizontalScrollIndicator}
           showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-          snapToAlignment={snapToAlignment}
-          onScroll={this._onScroll}
-        >
+          onScroll={this._onScroll}>
           {this._renderHeader()}
           <View style={innerContainerStyle}>
             {this._renderRows()}
@@ -313,7 +275,7 @@ export default class SortableList extends Component {
           onRelease={this._onReleaseRow.bind(this, key)}
           onMove={this._onMoveRow}
           manuallyActivateRows={this.props.manuallyActivateRows}>
-          {renderRow({
+          {createElement(renderRow, {
             key,
             data: data[key],
             disabled: !sortingEnabled,
@@ -659,9 +621,8 @@ export default class SortableList extends Component {
     }
   };
 
-  _onScroll = (e) => {
-      this._contentOffset = e.nativeEvent.contentOffset;
-      this.props.onScroll(e)
+  _onScroll = ({nativeEvent: {contentOffset}}) => {
+      this._contentOffset = contentOffset;
   };
 
   _onRefContainer = (component) => {
