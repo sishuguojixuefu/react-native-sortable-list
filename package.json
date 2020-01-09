@@ -1,5 +1,5 @@
 {
-  "name": "react-native-sortable-list",
+  "name": "@sishuguojixuefu/react-native-sortable-list",
   "version": "0.0.23",
   "description": "React Native Sortable List component",
   "main": "index.js",
